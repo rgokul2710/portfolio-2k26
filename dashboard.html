@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Habit Squad | Dashboard</title>
+  <style>
+    :root {
+      --primary: #4285f4;
+      --secondary: #3367d6;
+      --success: #4CAF50;
+      --danger: #f44336;
+      --warning: #FF9800;
+      --gray: #9E9E9E;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 15px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      margin: 0 0 5px 0;
+      color: #333;
+    }
+
+    .header p {
+      margin: 0;
+      color: #666;
+      font-size: 0.95rem;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 15px 0 20px;
+    }
+
+    .nav-bar a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 15px;
+      border-radius: 20px;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+      background: rgba(66, 133, 244, 0.1);
+    }
+
+    .nav-bar a:hover {
+      background: rgba(66, 133, 244, 0.2);
+    }
+
+    .habits-list {
+      max-width: 500px;
+      margin: 0 auto;
+      padding-bottom: 20px;
+    }
+
+    .habit-card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .habit-card:active {
+      transform: scale(0.98);
+    }
+
+    .habit-name {
+      font-weight: 500;
+      color: #333;
+      flex-grow: 1;
+    }
+
+    .habit-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .complete-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      min-width: 90px;
+    }
+
+    .complete-btn:hover {
+      background: var(--secondary);
+    }
+
+    .completed {
+      opacity: 0.9;
+      background: #f8f8f8;
+    }
+
+    .done-badge {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .undo-btn {
+      background: var(--danger);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .backdate-btn {
+      background: var(--warning);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .history-btn {
+      background: var(--gray);
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .date-picker {
+      position: absolute;
+      right: 15px;
+      top: 60px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      z-index: 2;
+      width: calc(100% - 30px);
+    }
+
+    .completion-history {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    .history-item {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: #666;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+
+      .habit-card {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .habit-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .complete-btn {
+        width: 100%;
+        padding: 12px;
+      }
+
+      .date-picker {
+        width: calc(100% - 24px);
+        right: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Your Habits</h1>
+    <p>Stay consistent, friend! 💪</p>
+  </div>
+
+  <div class="nav-bar">
+    <a href="dashboard.html">Habits</a>
+    <a href="streaks.html">Streaks</a>
+  </div>
+
+  <div class="habits-list" id="habitsList">
+    <div class="loading">Loading your habits...</div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHqv3EkgsA9iyW4EJD6IRCdZg78a9yd78",
+      authDomain: "portfolio-2k26.firebaseapp.com",
+      projectId: "portfolio-2k26",
+      storageBucket: "portfolio-2k26.firebasestorage.app",
+      messagingSenderId: "313180251597",
+      appId: "1:313180251597:web:e5c9a3c0cb36750927d084"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Check if user is logged in
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      } else {
+        loadHabits(user.uid);
+      }
+    });
+
+    // Load habits from Firestore
+    function loadHabits(userId) {
+      db.collection("habits")
+        .where("userId", "==", userId)
+        .get()
+        .then((querySnapshot) => {
+          const habitsList = document.getElementById("habitsList");
+          habitsList.innerHTML = "";
+
+          if (querySnapshot.empty) {
+            habitsList.innerHTML = `
+              <div class="empty-state">
+                No habits yet!<br>
+                Add some to get started.
+              </div>
+            `;
+            return;
+          }
+
+          // Load all habits
+          const habitPromises = querySnapshot.docs.map(async (doc) => {
+            const habit = doc.data();
+            const today = new Date().toISOString().split('T')[0];
+
+            // Check if already completed today
+            const completionSnapshot = await db.collection("completions")
+              .where("habitId", "==", doc.id)
+              .where("userId", "==", userId)
+              .where("date", "==", today)
+              .get();
+
+            const isCompleted = !completionSnapshot.empty;
+            const completionId = isCompleted ? completionSnapshot.docs[0].id : null;
+
+            return createHabitCard(doc.id, habit.name, isCompleted, completionId);
+          });
+
+          Promise.all(habitPromises).then(cards => {
+            cards.forEach(card => habitsList.appendChild(card));
+          });
+        })
+        .catch((error) => {
+          console.error("Error loading habits:", error);
+          habitsList.innerHTML = `
+            <div class="empty-state" style="color: #d32f2f;">
+              Error loading habits.<br>
+              Please refresh the page.
+            </div>
+          `;
+        });
+    }
+
+    // Create habit card element
+    function createHabitCard(habitId, habitName, isCompleted, completionId) {
+      const habitCard = document.createElement("div");
+      habitCard.className = `habit-card ${isCompleted ? 'completed' : ''}`;
+
+      if (isCompleted) {
+        habitCard.innerHTML = `
+          <span class="habit-name">${habitName}</span>
+          <div class="habit-actions">
+            <span class="done-badge">✅ Completed</span>
+            <button class="undo-btn">Undo</button>
+            <button class="backdate-btn">Backdate</button>
+            <button class="history-btn">History</button>
+          </div>
+        `;
+
+        // Add event listeners
+        habitCard.querySelector('.undo-btn').addEventListener('click', () => {
+          undoCompletion(completionId, habitCard);
+        });
+
+        habitCard.querySelector('.backdate-btn').addEventListener('click', () => {
+          showDatePicker(habitCard, habitId, habitName);
+        });
+
+        habitCard.querySelector('.history-btn').addEventListener('click', () => {
+          showHistory(habitId, habitName, habitCard);
+        });
+      } else {
+        habitCard.innerHTML = `
+          <span class="habit-name">${habitName}</span>
+          <button class="complete-btn">Complete</button>
+        `;
+
+        // Add click handler
+        habitCard.querySelector('.complete-btn').addEventListener('click', () => {
+          markAsCompleted(habitId, habitCard, habitName);
+        });
+      }
+
+      return habitCard;
+    }
+
+    // Mark habit as completed
+    async function markAsCompleted(habitId, habitCard, habitName, date = new Date().toISOString().split('T')[0]) {
+      const user = auth.currentUser;
+
+      // Visual feedback
+      habitCard.style.opacity = '0.7';
+      const originalContent = habitCard.innerHTML;
+      habitCard.innerHTML = `
+        <span class="habit-name">${habitName}</span>
+        <div class="habit-actions">
+          <span style="color: #666;">Marking...</span>
+        </div>
+      `;
+
+      try {
+        // Check if already completed for the selected date
+        const snapshot = await db.collection("completions")
+          .where("habitId", "==", habitId)
+          .where("userId", "==", user.uid)
+          .where("date", "==", date)
+          .get();
+
+        if (!snapshot.empty) {
+          alert(`You already completed this on ${date}!`);
+          habitCard.innerHTML = originalContent;
+          habitCard.style.opacity = '';
+          return;
+        }
+
+        // Add completion
+        const completionRef = await db.collection("completions").add({
+          habitId,
+          userId: user.uid,
+          date,
+          habitName,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Update UI
+        habitCard.innerHTML = `
+          <span class="habit-name">${habitName}</span>
+          <div class="habit-actions">
+            <span class="done-badge">✅ ${date === new Date().toISOString().split('T')[0] ? 'Completed' : date}</span>
+            <button class="undo-btn">Undo</button>
+            ${date === new Date().toISOString().split('T')[0] ? `
+              <button class="backdate-btn">Backdate</button>
+            ` : ''}
+            <button class="history-btn">History</button>
+          </div>
+        `;
+
+        habitCard.classList.add('completed');
+        habitCard.style.opacity = '';
+
+        // Add event listeners
+        habitCard.querySelector('.undo-btn').addEventListener('click', () => {
+          undoCompletion(completionRef.id, habitCard);
+        });
+
+        if (date === new Date().toISOString().split('T')[0]) {
+          habitCard.querySelector('.backdate-btn').addEventListener('click', () => {
+            showDatePicker(habitCard, habitId, habitName);
+          });
+        }
+
+        habitCard.querySelector('.history-btn').addEventListener('click', () => {
+          showHistory(habitId, habitName, habitCard);
+        });
+
+        // Celebrate if completed today!
+        if (date === new Date().toISOString().split('T')[0]) {
+          triggerConfetti();
+
+          // Haptic feedback (if available)
+          if (window.navigator.vibrate) {
+            window.navigator.vibrate(50);
+          }
+        }
+      } catch (error) {
+        console.error("Error completing habit:", error);
+        alert("Failed to mark as completed. Please try again.");
+        habitCard.innerHTML = originalContent;
+        habitCard.style.opacity = '';
+      }
+    }
+
+    // Undo a completion
+    async function undoCompletion(completionId, habitCard) {
+      if (!confirm("Remove this completion?")) return;
+
+      const undoBtn = habitCard.querySelector('.undo-btn');
+      undoBtn.disabled = true;
+      undoBtn.textContent = "Removing...";
+
+      try {
+        await db.collection("completions").doc(completionId).delete();
+
+        // Refresh the habit card
+        const habitName = habitCard.querySelector('.habit-name').textContent;
+        habitCard.classList.remove('completed');
+        habitCard.innerHTML = `
+          <span class="habit-name">${habitName}</span>
+          <button class="complete-btn">Complete</button>
+        `;
+
+        habitCard.querySelector('.complete-btn').addEventListener('click', () => {
+          const habitId = Array.from(habitCard.parentNode.children).indexOf(habitCard);
+          markAsCompleted(habitId, habitCard, habitName);
+        });
+      } catch (error) {
+        console.error("Error undoing completion:", error);
+        alert("Failed to undo. Please try again.");
+        undoBtn.disabled = false;
+        undoBtn.textContent = "Undo";
+      }
+    }
+
+    // Show date picker for backdating
+    function showDatePicker(habitCard, habitId, habitName) {
+      // Remove any existing date picker
+      const existingPicker = habitCard.querySelector('.date-picker');
+      if (existingPicker) existingPicker.remove();
+
+      const dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.className = 'date-picker';
+      dateInput.max = new Date().toISOString().split('T')[0];
+
+      // Default to yesterday
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      dateInput.value = yesterday.toISOString().split('T')[0];
+
+      dateInput.onchange = () => {
+        markAsCompleted(habitId, habitCard, habitName, dateInput.value);
+        dateInput.remove();
+      };
+
+      // Close picker when clicking outside
+      const clickHandler = (e) => {
+        if (!habitCard.contains(e.target)) {
+          dateInput.remove();
+          document.removeEventListener('click', clickHandler);
+        }
+      };
+
+      setTimeout(() => {
+        document.addEventListener('click', clickHandler);
+      }, 10);
+
+      habitCard.appendChild(dateInput);
+      dateInput.focus();
+    }
+
+    // Show completion history
+    async function showHistory(habitId, habitName, habitCard) {
+      // Remove any existing history
+      const existingHistory = habitCard.querySelector('.completion-history');
+      if (existingHistory) {
+        existingHistory.remove();
+        return;
+      }
+
+      const historyDiv = document.createElement('div');
+      historyDiv.className = 'completion-history';
+      historyDiv.innerHTML = `<strong>Loading history...</strong>`;
+
+      habitCard.appendChild(historyDiv);
+
+      try {
+        const completions = await db.collection("completions")
+          .where("habitId", "==", habitId)
+          .orderBy("date", "desc")
+          .limit(7)
+          .get();
+
+        if (completions.empty) {
+          historyDiv.innerHTML = `<strong>No history yet!</strong>`;
+        } else {
+          historyDiv.innerHTML = `
+            <strong>${habitName} History:</strong>
+            ${completions.docs.map(doc => {
+              const date = new Date(doc.data().date + 'T00:00:00');
+              return `<div class="history-item">${date.toDateString()}</div>`;
+            }).join('')}
+          `;
+        }
+
+        // Auto-close after 5 seconds
+        setTimeout(() => {
+          if (historyDiv.parentNode === habitCard) {
+            historyDiv.remove();
+          }
+        }, 5000);
+      } catch (error) {
+        console.error("Error loading history:", error);
+        historyDiv.innerHTML = `<strong>Error loading history</strong>`;
+      }
+    }
+
+    // Confetti celebration
+    function triggerConfetti() {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        disableForReducedMotion: true
+      });
+
+      // Additional celebration for mobile
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          confetti({
+            particleCount: 30,
+            spread: 100,
+            origin: { y: 0.5 },
+            disableForReducedMotion: true
+          });
+        }, 300);
+      }
+    }
+  </script>
+</body>
+</html>

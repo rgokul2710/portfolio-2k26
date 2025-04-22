@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Habit Squad | Streaks</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 10px;
+      -webkit-text-size-adjust: 100%;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .header h1 {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+    .chart-container {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    canvas {
+      width: 100% !important;
+      height: 250px !important;
+    }
+    .friend-legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 15px 0;
+    }
+    .friend {
+      display: flex;
+      align-items: center;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      min-width: 80px;
+      justify-content: center;
+    }
+    .friend.active {
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .color-box {
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
+      border-radius: 3px;
+    }
+    .nav-bar {
+      text-align: center;
+      margin: 15px 0;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+    .nav-bar a {
+      color: #4285f4;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 5px;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+    .nav-bar a:hover {
+      background: #f0f2f5;
+    }
+    h3 {
+      font-size: 1.1rem;
+      margin-top: 0;
+      text-align: center;
+    }
+    h3 small {
+      font-size: 0.8rem;
+      color: #666;
+      display: block;
+      margin-top: 3px;
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 20px;
+      }
+      .header h1 {
+        font-size: 2rem;
+      }
+      .chart-container {
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      canvas {
+        height: 300px !important;
+      }
+      .friend {
+        padding: 8px 12px;
+        font-size: 1rem;
+      }
+      h3 {
+        font-size: 1.3rem;
+      }
+      h3 small {
+        display: inline;
+        margin-left: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Team Streaks</h1>
+    <p>See how your squad is doing!</p>
+  </div>
+
+  <div class="nav-bar">
+    <a href="dashboard.html">Habits</a>
+    <a href="streaks.html">Streaks</a>
+  </div>
+
+  <div class="chart-container">
+    <h3>This Week</h3>
+    <canvas id="weeklyChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>30-Day Trend <small>(Tap names to toggle)</small></h3>
+    <div class="friend-legend" id="friendLegend">
+      <!-- Friend legend will load here -->
+    </div>
+    <canvas id="monthlyChart"></canvas>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHqv3EkgsA9iyW4EJD6IRCdZg78a9yd78",
+      authDomain: "portfolio-2k26.firebaseapp.com",
+      projectId: "portfolio-2k26",
+      storageBucket: "portfolio-2k26.firebasestorage.app",
+      messagingSenderId: "313180251597",
+      appId: "1:313180251597:web:e5c9a3c0cb36750927d084"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Friend data
+    const friends = [
+      { id: "hazsED1W6mbXl4UoTlpVq79Gj2K3", name: "Gokul", color: "#FF6384", visible: true },
+      { id: "jZ1wad5uaKZj7PlcMoLRjEVLeO13", name: "Hari", color: "#36A2EB", visible: true },
+      { id: "KoDRu25jL2SMKQWFeHHzhsNhXsN2", name: "Kathir", color: "#FFCE56", visible: true }
+    ];
+
+    // Chart instances
+    let weeklyChart, monthlyChart;
+    let monthlyChartData = {};
+
+    // On page load
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      } else {
+        loadCharts();
+      }
+    });
+
+    function renderFriendLegend() {
+      const legend = document.getElementById("friendLegend");
+      legend.innerHTML = friends.map(friend => `
+        <div class="friend ${friend.visible ? 'active' : ''}" data-id="${friend.id}">
+          <div class="color-box" style="background: ${friend.color};"></div>
+          <span>${friend.name}</span>
+        </div>
+      `).join("");
+
+      // Touch-friendly event handlers
+      document.querySelectorAll('.friend').forEach(el => {
+        el.addEventListener('click', function() {
+          this.classList.add('active'); // Visual feedback
+          setTimeout(() => {
+            const friendId = this.getAttribute('data-id');
+            const friend = friends.find(f => f.id === friendId);
+            friend.visible = !friend.visible;
+            this.classList.toggle('active', friend.visible);
+            updateMonthlyChart();
+          }, 100);
+        });
+      });
+    }
+
+    async function loadCharts() {
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+      // Single optimized query
+      const completions = await db.collection("completions")
+        .where("userId", "in", friends.map(f => f.id))
+        .where("date", ">=", thirtyDaysAgo.toISOString().split('T')[0])
+        .get();
+
+      monthlyChartData = process30DayData(completions.docs);
+      const thisWeekData = processThisWeekData(completions.docs, startOfWeek);
+
+      renderThisWeekChart(thisWeekData);
+      renderFriendLegend();
+      render30DayChart(monthlyChartData);
+    }
+
+    function processThisWeekData(docs, startOfWeek) {
+      const results = {};
+      friends.forEach(friend => results[friend.id] = Array(7).fill(0));
+
+      docs.forEach(doc => {
+        const docData = doc.data();
+        if (!docData.date) return;
+
+        try {
+          const docDate = new Date(docData.date + 'T00:00:00');
+          if (docDate >= startOfWeek) {
+            const dayIndex = Math.floor((docDate - startOfWeek) / (1000 * 60 * 60 * 24));
+            if (dayIndex >= 0 && dayIndex < 7) {
+              results[docData.userId][dayIndex]++;
+            }
+          }
+        } catch (e) {
+          console.warn("Invalid date:", docData.date);
+        }
+      });
+      return results;
+    }
+
+    function renderThisWeekChart(data) {
+      const ctx = document.getElementById('weeklyChart').getContext('2d');
+      const today = new Date();
+      const todayIndex = today.getDay();
+      const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      if (weeklyChart) weeklyChart.destroy();
+
+      weeklyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dayLabels,
+          datasets: friends.map(friend => ({
+            label: friend.name,
+            data: data[friend.id],
+            backgroundColor: friend.color,
+            borderWidth: 1
+          }))
+        },
+        options: getChartOptions(dayLabels, todayIndex)
+      });
+    }
+
+    function process30DayData(docs) {
+      const results = {};
+      friends.forEach(friend => results[friend.id] = Array(30).fill(0));
+
+      docs.forEach(doc => {
+        const docData = doc.data();
+        if (!docData.date) return;
+
+        try {
+          const docDate = new Date(docData.date + 'T00:00:00');
+          const dayDiff = Math.floor((new Date() - docDate) / (1000 * 60 * 60 * 24));
+          if (dayDiff >= 0 && dayDiff < 30) {
+            results[docData.userId][29 - dayDiff]++;
+          }
+        } catch (e) {
+          console.warn("Invalid date:", docData.date);
+        }
+      });
+      return results;
+    }
+
+    function render30DayChart(data) {
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      const dateLabels = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (29 - i));
+        return i === 29 ? 'Today' :
+          new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(date);
+      });
+
+      if (monthlyChart) monthlyChart.destroy();
+
+      monthlyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dateLabels,
+          datasets: friends.filter(f => f.visible).map(friend => ({
+            label: friend.name,
+            data: data[friend.id],
+            borderColor: friend.color,
+            borderWidth: 2,
+            pointRadius: window.innerWidth < 768 ? 2 : 3,
+            tension: 0.3
+          }))
+        },
+        options: getChartOptions(dateLabels, 29, true)
+      });
+    }
+
+    function getChartOptions(labels, todayIndex, isMonthly = false) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0,
+              font: {
+                size: window.innerWidth < 768 ? 10 : 12
+              }
+            }
+          },
+          x: {
+            ticks: {
+              maxRotation: isMonthly ? 45 : 0,
+              minRotation: isMonthly ? 45 : 0,
+              font: {
+                size: window.innerWidth < 768 ? 10 : 12
+              },
+              callback: (value, index) =>
+                index === todayIndex ? `Today (${labels[index]})` : labels[index]
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: window.innerWidth > 480,
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} completion${ctx.raw !== 1 ? 's' : ''}`
+            }
+          }
+        }
+      };
+    }
+
+    function updateMonthlyChart() {
+      render30DayChart(monthlyChartData);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      if (weeklyChart) weeklyChart.resize();
+      if (monthlyChart) monthlyChart.resize();
+    });
+  </script>
+</body>
+</html>

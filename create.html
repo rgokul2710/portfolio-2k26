@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Habit</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Create New Habit</h1>
+        </header>
+        <form id="create-habit-form">
+            <input type="text" id="habit-name" placeholder="Habit name" required />
+            <input type="color" id="habit-color" />
+            <select id="habit-emoji">
+                <option value="😊">😊</option>
+                <option value="💪">💪</option>
+                <option value="🏃‍♂️">🏃‍♂️</option>
+                <option value="📖">📖</option>
+            </select>
+            <button type="submit">Create Habit</button>
+        </form>
+        <footer>
+            <button id="back-dashboard">Back to Dashboard</button>
+        </footer>
+    </div>
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
