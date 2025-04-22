@@ -350,7 +350,6 @@
             <span class="done-badge">✅ Completed</span>
             <button class="undo-btn">Undo</button>
             <button class="backdate-btn">Backdate</button>
-            <button class="history-btn">History</button>
           </div>
         `;
 
@@ -361,10 +360,6 @@
 
         habitCard.querySelector('.backdate-btn').addEventListener('click', () => {
           showDatePicker(habitCard, habitId, habitName);
-        });
-
-        habitCard.querySelector('.history-btn').addEventListener('click', () => {
-          showHistory(habitId, habitName, habitCard);
         });
       } else {
         habitCard.innerHTML = `
