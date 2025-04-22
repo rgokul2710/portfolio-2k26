@@ -91,6 +91,95 @@
       margin-top: 3px;
     }
 
+    /* Habit Selector Styles */
+    .habit-selector {
+      margin: 20px auto;
+      max-width: 500px;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .habit-options {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+    .habit-option {
+      position: relative;
+      flex: 1;
+      min-width: 120px;
+    }
+    .habit-option input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .habit-option label {
+      display: block;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .habit-option input:checked + label {
+      background: #4285f4;
+      color: white;
+      box-shadow: 0 2px 5px rgba(66, 133, 244, 0.3);
+    }
+
+    /* 30-Day Records Styles */
+    .records-container {
+      margin: 20px auto;
+      max-width: 500px;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .records-header {
+      font-weight: bold;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .records-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .day-cell {
+      text-align: center;
+      padding: 8px 0;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    .completed-day {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .empty-day {
+      background: #f5f5f5;
+      color: #9e9e9e;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .user-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      margin-right: 8px;
+    }
+
     @media (min-width: 768px) {
       body {
         padding: 20px;
@@ -117,6 +206,18 @@
         margin-left: 10px;
       }
     }
+
+    @media (max-width: 600px) {
+      .records-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 400px) {
+      .records-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
   </style>
 </head>
 <body>
@@ -141,6 +242,20 @@
       <!-- Friend legend will load here -->
     </div>
     <canvas id="monthlyChart"></canvas>
+  </div>
+
+  <div class="habit-selector">
+    <h3 style="margin-top: 0; text-align: center;">Select Habit</h3>
+    <div class="habit-options" id="habitOptions">
+      <!-- Habit options will load here -->
+    </div>
+  </div>
+
+  <div class="records-container" id="recordsContainer">
+    <div class="records-header">30-Day Completion Records</div>
+    <div id="userRecords">
+      <!-- User records will load here -->
+    </div>
   </div>
 
   <!-- Chart.js -->
@@ -176,6 +291,8 @@
     // Chart instances
     let weeklyChart, monthlyChart;
     let monthlyChartData = {};
+    let habits = [];
+    let selectedHabitId = null;
 
     // On page load
     auth.onAuthStateChanged((user) => {
@@ -183,6 +300,7 @@
         window.location.href = "index.html";
       } else {
         loadCharts();
+        loadHabits();
       }
     });
 
@@ -232,6 +350,112 @@
       renderThisWeekChart(thisWeekData);
       renderFriendLegend();
       render30DayChart(monthlyChartData);
+    }
+
+    async function loadHabits() {
+      const snapshot = await db.collection("habits").get();
+      habits = snapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name,
+        userId: doc.data().userId
+      }));
+
+      renderHabitOptions();
+
+      // Select first habit by default
+      if (habits.length > 0) {
+        selectedHabitId = habits[0].id;
+        update30DayRecords();
+      }
+    }
+
+    function renderHabitOptions() {
+      const container = document.getElementById("habitOptions");
+      container.innerHTML = habits.map(habit => `
+        <div class="habit-option">
+          <input type="radio"
+                 id="habit-${habit.id}"
+                 name="habit"
+                 value="${habit.id}"
+                 ${selectedHabitId === habit.id ? 'checked' : ''}
+                 onchange="habitSelected('${habit.id}')">
+          <label for="habit-${habit.id}">${habit.name}</label>
+        </div>
+      `).join("");
+    }
+
+    function habitSelected(habitId) {
+      selectedHabitId = habitId;
+      update30DayRecords();
+    }
+
+    async function update30DayRecords() {
+      if (!selectedHabitId) return;
+
+      const recordsContainer = document.getElementById("userRecords");
+      recordsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading records...</div>';
+
+      // Get the selected habit
+      const selectedHabit = habits.find(h => h.id === selectedHabitId);
+
+      // Generate dates for last 30 days
+      const today = new Date();
+      const dates = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date(today);
+        date.setDate(date.getDate() - (29 - i));
+        return date.toISOString().split('T')[0];
+      });
+
+      // Get records for all friends
+      const records = await Promise.all(friends.map(async friend => {
+        const snapshot = await db.collection("completions")
+          .where("habitId", "==", selectedHabitId)
+          .where("userId", "==", friend.id)
+          .where("date", ">=", dates[0])
+          .get();
+
+        // Create a map of completion dates
+        const completedDates = new Set();
+        snapshot.forEach(doc => {
+          completedDates.add(doc.data().date);
+        });
+
+        return {
+          name: friend.name,
+          color: friend.color,
+          completions: dates.map(date => completedDates.has(date))
+        };
+      }));
+
+      // Render records
+      renderUserRecords(records, dates);
+    }
+
+    function renderUserRecords(records, dates) {
+      const recordsContainer = document.getElementById("userRecords");
+      recordsContainer.innerHTML = '';
+
+
+      // Add each user's records
+      records.forEach(user => {
+        const userRow = document.createElement('div');
+        userRow.className = 'user-row';
+        userRow.innerHTML = `
+          <div class="user-color" style="background: ${user.color};"></div>
+          <div style="font-weight: 500; min-width: 80px;">${user.name}</div>
+        `;
+
+        const grid = document.createElement('div');
+        grid.className = 'records-grid';
+        grid.innerHTML = user.completions.map(completed => `
+          <div class="day-cell ${completed ? 'completed-day' : 'empty-day'}">
+            ${completed ? '✓' : '✗'}
+          </div>
+        `).join('');
+
+        userRow.appendChild(grid);
+        recordsContainer.appendChild(userRow);
+      });
     }
 
     function processThisWeekData(docs, startOfWeek) {
