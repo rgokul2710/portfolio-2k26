@@ -20,17 +20,41 @@
       font-size: 1.5rem;
       margin-bottom: 5px;
     }
+
+    /* Horizontal Scroll Sections */
+    .scroll-section {
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      padding-left: 10px;
+    }
+    .horizontal-scroll {
+      display: flex;
+      overflow-x: auto;
+      gap: 15px;
+      padding-bottom: 15px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .scroll-content {
+      min-width: 100%;
+    }
+
+    /* Chart Container Styles */
     .chart-container {
       background: white;
       border-radius: 8px;
       padding: 15px;
-      margin-bottom: 15px;
       box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+      width: 100%;
     }
     canvas {
       width: 100% !important;
       height: 250px !important;
     }
+
+    /* Friend Legend */
     .friend-legend {
       display: flex;
       justify-content: center;
@@ -60,6 +84,8 @@
       margin-right: 6px;
       border-radius: 3px;
     }
+
+    /* Navigation */
     .nav-bar {
       text-align: center;
       margin: 15px 0;
@@ -79,19 +105,22 @@
     .nav-bar a:hover {
       background: #f0f2f5;
     }
-    h3 {
+
+    /* Chart Titles */
+    .chart-title {
       font-size: 1.1rem;
       margin-top: 0;
       text-align: center;
+      padding-bottom: 10px;
     }
-    h3 small {
+    .chart-subtitle {
       font-size: 0.8rem;
       color: #666;
       display: block;
       margin-top: 3px;
     }
 
-    /* Habit Selector Styles */
+    /* Habit Selector */
     .habit-selector {
       margin: 20px auto;
       max-width: 500px;
@@ -133,14 +162,12 @@
       box-shadow: 0 2px 5px rgba(66, 133, 244, 0.3);
     }
 
-    /* 30-Day Records Styles */
+    /* Records Grid */
     .records-container {
-      margin: 20px auto;
-      max-width: 500px;
-      padding: 15px;
       background: white;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 15px;
     }
     .records-header {
       font-weight: bold;
@@ -150,15 +177,17 @@
     }
     .records-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      margin-top: 10px;
+      grid-template-columns: repeat(30, 1fr);
+      gap: 3px;
+      overflow-x: auto;
+      padding-bottom: 10px;
     }
     .day-cell {
       text-align: center;
       padding: 8px 0;
       border-radius: 4px;
       font-size: 0.8rem;
+      min-width: 20px;
     }
     .completed-day {
       background: #e8f5e9;
@@ -179,7 +208,12 @@
       border-radius: 3px;
       margin-right: 8px;
     }
+    .user-name {
+      min-width: 80px;
+      font-weight: 500;
+    }
 
+    /* Responsive Adjustments */
     @media (min-width: 768px) {
       body {
         padding: 20px;
@@ -189,7 +223,6 @@
       }
       .chart-container {
         padding: 20px;
-        margin-bottom: 20px;
       }
       canvas {
         height: 300px !important;
@@ -198,10 +231,10 @@
         padding: 8px 12px;
         font-size: 1rem;
       }
-      h3 {
+      .chart-title {
         font-size: 1.3rem;
       }
-      h3 small {
+      .chart-subtitle {
         display: inline;
         margin-left: 10px;
       }
@@ -209,13 +242,7 @@
 
     @media (max-width: 600px) {
       .records-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    @media (max-width: 400px) {
-      .records-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(30, 20px);
       }
     }
   </style>
@@ -231,36 +258,59 @@
     <a href="streaks.html">Streaks</a>
   </div>
 
-  <div class="chart-container">
-    <h3>This Week</h3>
-    <canvas id="weeklyChart"></canvas>
+  <!-- This Week Section -->
+  <div class="scroll-section">
+    <div class="section-title">This Week</div>
+    <div class="horizontal-scroll">
+      <div class="scroll-content">
+        <div class="chart-container">
+          <div class="chart-title">
+            Weekly Completion
+            <span class="chart-subtitle">Sun → Sat</span>
+          </div>
+          <canvas id="weeklyChart"></canvas>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="chart-container">
-    <h3>30-Day Trend <small>(Tap names to toggle)</small></h3>
-    <div class="friend-legend" id="friendLegend">
-      <!-- Friend legend will load here -->
+  <!-- 30-Day Trend Section -->
+  <div class="scroll-section">
+    <div class="section-title">30-Day Trend</div>
+    <div class="horizontal-scroll">
+      <div class="scroll-content">
+        <div class="chart-container">
+          <div class="chart-title">
+            Monthly Trend
+            <span class="chart-subtitle">Tap names to toggle</span>
+          </div>
+          <div class="friend-legend" id="friendLegend"></div>
+          <canvas id="monthlyChart"></canvas>
+        </div>
+      </div>
     </div>
-    <canvas id="monthlyChart"></canvas>
+  </div>
+
+  <!-- Completion Records Section -->
+  <div class="scroll-section">
+    <div class="section-title">Completion Records</div>
+    <div class="horizontal-scroll">
+      <div class="scroll-content">
+        <div class="records-container" id="recordsContainer">
+          <div class="records-header">30-Day Completion Records</div>
+          <div id="userRecords"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="habit-selector">
     <h3 style="margin-top: 0; text-align: center;">Select Habit</h3>
-    <div class="habit-options" id="habitOptions">
-      <!-- Habit options will load here -->
-    </div>
+    <div class="habit-options" id="habitOptions"></div>
   </div>
 
-  <div class="records-container" id="recordsContainer">
-    <div class="records-header">30-Day Completion Records</div>
-    <div id="userRecords">
-      <!-- User records will load here -->
-    </div>
-  </div>
-
-  <!-- Chart.js -->
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
@@ -313,10 +363,9 @@
         </div>
       `).join("");
 
-      // Touch-friendly event handlers
       document.querySelectorAll('.friend').forEach(el => {
         el.addEventListener('click', function() {
-          this.classList.add('active'); // Visual feedback
+          this.classList.add('active');
           setTimeout(() => {
             const friendId = this.getAttribute('data-id');
             const friend = friends.find(f => f.id === friendId);
@@ -338,7 +387,6 @@
       thirtyDaysAgo.setDate(today.getDate() - 30);
       thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-      // Single optimized query
       const completions = await db.collection("completions")
         .where("userId", "in", friends.map(f => f.id))
         .where("date", ">=", thirtyDaysAgo.toISOString().split('T')[0])
@@ -362,7 +410,6 @@
 
       renderHabitOptions();
 
-      // Select first habit by default
       if (habits.length > 0) {
         selectedHabitId = habits[0].id;
         update30DayRecords();
@@ -395,10 +442,7 @@
       const recordsContainer = document.getElementById("userRecords");
       recordsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading records...</div>';
 
-      // Get the selected habit
       const selectedHabit = habits.find(h => h.id === selectedHabitId);
-
-      // Generate dates for last 30 days
       const today = new Date();
       const dates = Array.from({ length: 30 }, (_, i) => {
         const date = new Date(today);
@@ -406,7 +450,6 @@
         return date.toISOString().split('T')[0];
       });
 
-      // Get records for all friends
       const records = await Promise.all(friends.map(async friend => {
         const snapshot = await db.collection("completions")
           .where("habitId", "==", selectedHabitId)
@@ -414,11 +457,8 @@
           .where("date", ">=", dates[0])
           .get();
 
-        // Create a map of completion dates
         const completedDates = new Set();
-        snapshot.forEach(doc => {
-          completedDates.add(doc.data().date);
-        });
+        snapshot.forEach(doc => completedDates.add(doc.data().date));
 
         return {
           name: friend.name,
@@ -427,58 +467,29 @@
         };
       }));
 
-      // Render records
-      renderUserRecords(records, dates);
+      renderUserRecords(records);
     }
 
-    function renderUserRecords(records, dates) {
+    function renderUserRecords(records) {
       const recordsContainer = document.getElementById("userRecords");
       recordsContainer.innerHTML = '';
 
-
-      // Add each user's records
       records.forEach(user => {
         const userRow = document.createElement('div');
         userRow.className = 'user-row';
         userRow.innerHTML = `
           <div class="user-color" style="background: ${user.color};"></div>
-          <div style="font-weight: 500; min-width: 80px;">${user.name}</div>
-        `;
-
-        const grid = document.createElement('div');
-        grid.className = 'records-grid';
-        grid.innerHTML = user.completions.map(completed => `
-          <div class="day-cell ${completed ? 'completed-day' : 'empty-day'}">
-            ${completed ? '✓' : '✗'}
+          <div class="user-name">${user.name}</div>
+          <div class="records-grid">
+            ${user.completions.map(completed => `
+              <div class="day-cell ${completed ? 'completed-day' : 'empty-day'}">
+                ${completed ? '✓' : '✗'}
+              </div>
+            `).join('')}
           </div>
-        `).join('');
-
-        userRow.appendChild(grid);
+        `;
         recordsContainer.appendChild(userRow);
       });
-    }
-
-    function processThisWeekData(docs, startOfWeek) {
-      const results = {};
-      friends.forEach(friend => results[friend.id] = Array(7).fill(0));
-
-      docs.forEach(doc => {
-        const docData = doc.data();
-        if (!docData.date) return;
-
-        try {
-          const docDate = new Date(docData.date + 'T00:00:00');
-          if (docDate >= startOfWeek) {
-            const dayIndex = Math.floor((docDate - startOfWeek) / (1000 * 60 * 60 * 24));
-            if (dayIndex >= 0 && dayIndex < 7) {
-              results[docData.userId][dayIndex]++;
-            }
-          }
-        } catch (e) {
-          console.warn("Invalid date:", docData.date);
-        }
-      });
-      return results;
     }
 
     function renderThisWeekChart(data) {
@@ -504,34 +515,12 @@
       });
     }
 
-    function process30DayData(docs) {
-      const results = {};
-      friends.forEach(friend => results[friend.id] = Array(30).fill(0));
-
-      docs.forEach(doc => {
-        const docData = doc.data();
-        if (!docData.date) return;
-
-        try {
-          const docDate = new Date(docData.date + 'T00:00:00');
-          const dayDiff = Math.floor((new Date() - docDate) / (1000 * 60 * 60 * 24));
-          if (dayDiff >= 0 && dayDiff < 30) {
-            results[docData.userId][29 - dayDiff]++;
-          }
-        } catch (e) {
-          console.warn("Invalid date:", docData.date);
-        }
-      });
-      return results;
-    }
-
     function render30DayChart(data) {
       const ctx = document.getElementById('monthlyChart').getContext('2d');
       const dateLabels = Array.from({ length: 30 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - (29 - i));
-        return i === 29 ? 'Today' :
-          new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(date);
+        return i === 29 ? 'Today' : '';
       });
 
       if (monthlyChart) monthlyChart.destroy();
@@ -551,6 +540,54 @@
         },
         options: getChartOptions(dateLabels, 29, true)
       });
+    }
+
+    function updateMonthlyChart() {
+      render30DayChart(monthlyChartData);
+    }
+
+    function processThisWeekData(docs, startOfWeek) {
+      const results = {};
+      friends.forEach(friend => results[friend.id] = Array(7).fill(0));
+
+      docs.forEach(doc => {
+        const docData = doc.data();
+        if (!docData.date) return;
+
+        try {
+          const docDate = new Date(docData.date + 'T00:00:00');
+          if (docDate >= startOfWeek) {
+            const dayIndex = Math.floor((docDate - startOfWeek) / (1000 * 60 * 60 * 24));
+            if (dayIndex >= 0 && dayIndex < 7) {
+              results[docData.userId][dayIndex]++;
+            }
+          }
+        } catch (e) {
+          console.warn("Invalid date:", docData.date);
+        }
+      });
+      return results;
+    }
+
+    function process30DayData(docs) {
+      const results = {};
+      friends.forEach(friend => results[friend.id] = Array(30).fill(0));
+
+      docs.forEach(doc => {
+        const docData = doc.data();
+        if (!docData.date) return;
+
+        try {
+          const docDate = new Date(docData.date + 'T00:00:00');
+          const dayDiff = Math.floor((new Date() - docDate) / (1000 * 60 * 60 * 24));
+          if (dayDiff >= 0 && dayDiff < 30) {
+            results[docData.userId][29 - dayDiff]++;
+          }
+        } catch (e) {
+          console.warn("Invalid date:", docData.date);
+        }
+      });
+      return results;
     }
 
     function getChartOptions(labels, todayIndex, isMonthly = false) {
@@ -573,9 +610,7 @@
               minRotation: isMonthly ? 45 : 0,
               font: {
                 size: window.innerWidth < 768 ? 10 : 12
-              },
-              callback: (value, index) =>
-                index === todayIndex ? `Today (${labels[index]})` : labels[index]
+              }
             }
           }
         },
@@ -591,10 +626,6 @@
           }
         }
       };
-    }
-
-    function updateMonthlyChart() {
-      render30DayChart(monthlyChartData);
     }
 
     // Handle window resize
