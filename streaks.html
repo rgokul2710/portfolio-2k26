@@ -437,38 +437,37 @@
     }
 
     async function update30DayRecords() {
-      if (!selectedHabitId) return;
+        if (!selectedHabitId) return;
 
-      const recordsContainer = document.getElementById("userRecords");
-      recordsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading records...</div>';
+        const recordsContainer = document.getElementById("userRecords");
+        recordsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading records...</div>';
 
-      const selectedHabit = habits.find(h => h.id === selectedHabitId);
-      const today = new Date();
-      const dates = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date(today);
-        date.setDate(date.getDate() - (29 - i));
-        return date.toISOString().split('T')[0];
-      });
+        const today = new Date();
+        const dates = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date(today);
+          date.setDate(date.getDate() - (i + 1)); // Changed from (29 - i) to (i + 1) to reverse order
+          return date.toISOString().split('T')[0];
+        });
 
-      const records = await Promise.all(friends.map(async friend => {
-        const snapshot = await db.collection("completions")
-          .where("habitId", "==", selectedHabitId)
-          .where("userId", "==", friend.id)
-          .where("date", ">=", dates[0])
-          .get();
+        const records = await Promise.all(friends.map(async friend => {
+          const snapshot = await db.collection("completions")
+            .where("habitId", "==", selectedHabitId)
+            .where("userId", "==", friend.id)
+            .where("date", ">=", dates[dates.length - 1]) // Oldest date (30 days ago)
+            .get();
 
-        const completedDates = new Set();
-        snapshot.forEach(doc => completedDates.add(doc.data().date));
+          const completedDates = new Set();
+          snapshot.forEach(doc => completedDates.add(doc.data().date));
 
-        return {
-          name: friend.name,
-          color: friend.color,
-          completions: dates.map(date => completedDates.has(date))
-        };
-      }));
+          return {
+            name: friend.name,
+            color: friend.color,
+            completions: dates.map(date => completedDates.has(date)) // Now in reverse order (newest first)
+          };
+        }));
 
-      renderUserRecords(records);
-    }
+        renderUserRecords(records);
+      }
 
     function renderUserRecords(records) {
       const recordsContainer = document.getElementById("userRecords");
