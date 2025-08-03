@@ -1074,9 +1074,9 @@
         });
       });
       
-      // Separate completed and missed, then group by user
-      const completedByUser = {};
-      const missedByUser = {};
+      // Separate completed and missed
+      const completed = [];
+      const missed = [];
       
       allCombinations.forEach(combo => {
         const wasCompleted = dayCompletions.some(comp => 
@@ -1084,47 +1084,31 @@
         );
         
         if (wasCompleted) {
-          if (!completedByUser[combo.userName]) {
-            completedByUser[combo.userName] = {
-              userName: combo.userName,
-              userColor: combo.userColor,
-              habits: []
-            };
-          }
-          completedByUser[combo.userName].habits.push(combo.habitName);
+          completed.push(combo);
         } else {
-          if (!missedByUser[combo.userName]) {
-            missedByUser[combo.userName] = {
-              userName: combo.userName,
-              userColor: combo.userColor,
-              habits: []
-            };
-          }
-          missedByUser[combo.userName].habits.push(combo.habitName);
+          missed.push(combo);
         }
       });
       
-      // Render completed habits grouped by user
-      const completedUsers = Object.values(completedByUser);
-      completedHabits.innerHTML = completedUsers.length > 0 
-        ? completedUsers.map(user => `
+      // Render completed habits
+      completedHabits.innerHTML = completed.length > 0 
+        ? completed.map(habit => `
             <div class="habit-item completed">
               <div class="habit-info">
-                <div class="habit-name" style="color: ${user.userColor}">${user.userName}</div>
-                <div class="habit-owner">${user.habits.join(', ')}</div>
+                <div class="habit-name">${habit.habitName}</div>
+                <div class="habit-owner" style="color: ${habit.userColor}">${habit.userName}</div>
               </div>
             </div>
           `).join('')
         : '<div style="color: #666; font-style: italic;">No habits completed</div>';
       
-      // Render missed habits grouped by user
-      const missedUsers = Object.values(missedByUser);
-      missedHabits.innerHTML = missedUsers.length > 0 
-        ? missedUsers.map(user => `
+      // Render missed habits
+      missedHabits.innerHTML = missed.length > 0 
+        ? missed.map(habit => `
             <div class="habit-item missed">
               <div class="habit-info">
-                <div class="habit-name" style="color: ${user.userColor}">${user.userName}</div>
-                <div class="habit-owner">${user.habits.join(', ')}</div>
+                <div class="habit-name">${habit.habitName}</div>
+                <div class="habit-owner" style="color: ${habit.userColor}">${habit.userName}</div>
               </div>
             </div>
           `).join('')
@@ -1132,7 +1116,6 @@
       
       modal.style.display = 'block';
     }
-
     
     // Add event listeners (add this to your existing auth.onAuthStateChanged function)
     document.getElementById('prevMonth').addEventListener('click', async () => {
