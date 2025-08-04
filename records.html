@@ -497,11 +497,18 @@
       const monthStart = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth(), 1);
       const monthEnd = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 0);
       
-      let totalCompletions = 0;
       let completionDays = new Set();
-      let bestDay = { date: '', count: 0 };
+      const userStats = {};
       
-      const totalPossible = habits.length * friends.length * monthEnd.getDate();
+      // Initialize user stats
+      friends.forEach(friend => {
+        userStats[friend.id] = {
+          name: friend.name,
+          color: friend.color,
+          totalCompletions: 0,
+          totalPossible: habits.length * monthEnd.getDate()
+        };
+      });
       
       // Count completions for the current month
       for (let day = 1; day <= monthEnd.getDate(); day++) {
@@ -510,53 +517,59 @@
           String(day).padStart(2, '0');
         
         const dayCompletions = calendarData[dateStr] || [];
-        totalCompletions += dayCompletions.length;
         
         if (dayCompletions.length > 0) {
           completionDays.add(dateStr);
         }
         
-        if (dayCompletions.length > bestDay.count) {
-          bestDay = { date: dateStr, count: dayCompletions.length };
-        }
+        // Count completions by user
+        dayCompletions.forEach(completion => {
+          if (userStats[completion.userId]) {
+            userStats[completion.userId].totalCompletions++;
+          }
+        });
       }
       
+      // Calculate completion rates
+      Object.keys(userStats).forEach(userId => {
+        const user = userStats[userId];
+        user.completionRate = user.totalPossible > 0 ? 
+          Math.round((user.totalCompletions / user.totalPossible) * 100) : 0;
+      });
+      
       monthlyStats = {
-        totalCompletions,
         activeDays: completionDays.size,
-        completionRate: totalPossible > 0 ? Math.round((totalCompletions / totalPossible) * 100) : 0,
-        bestDay: bestDay.count > 0 ? bestDay : null
+        userStats: Object.values(userStats)
       };
     }
-
+    
     function renderStats() {
       const statsSection = document.getElementById('statsSection');
       
-      let bestDayText = 'None';
-      if (monthlyStats.bestDay) {
-        const date = new Date(monthlyStats.bestDay.date + 'T00:00:00');
-        bestDayText = `${date.getDate()}/${date.getMonth() + 1} (${monthlyStats.bestDay.count})`;
-      }
-      
-      statsSection.innerHTML = `
-        <div class="stat-card">
-          <div class="stat-number">${monthlyStats.totalCompletions}</div>
-          <div class="stat-label">Total Completions</div>
-        </div>
+      let statsHTML = `
         <div class="stat-card">
           <div class="stat-number">${monthlyStats.activeDays}</div>
           <div class="stat-label">Active Days</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-number">${monthlyStats.completionRate}%</div>
-          <div class="stat-label">Completion Rate</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" style="font-size: 1.2rem;">${bestDayText}</div>
-          <div class="stat-label">Best Day</div>
-        </div>
       `;
+      
+      // Add user-specific stats
+      monthlyStats.userStats.forEach(user => {
+        statsHTML += `
+          <div class="stat-card">
+            <div class="stat-number" style="color: ${user.color}">${user.totalCompletions}</div>
+            <div class="stat-label">${user.name} Completions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" style="color: ${user.color}">${user.completionRate}%</div>
+            <div class="stat-label">${user.name} Rate</div>
+          </div>
+        `;
+      });
+      
+      statsSection.innerHTML = statsHTML;
     }
+
 
     function renderCalendar() {
       const grid = document.getElementById('calendarGrid');
